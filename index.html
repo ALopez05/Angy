@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abel y Angely</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f8e1e8;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            animation: fadeInDown 1s ease;
+        }
+
+        h1 {
+            color: #e44d90;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        p {
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            color: #555;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-selection {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+            align-content: center;
+            height: 100%;
+            animation: fadeIn 1s ease;
+        }
+
+        .image-option {
+            position: relative;
+            cursor: pointer;
+            height: 180px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .image-option:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(8px);
+            transition: filter 0.3s ease;
+        }
+
+        .image-option::after {
+            content: "?";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5rem;
+            color: white;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+            transition: opacity 0.3s ease;
+        }
+
+        .puzzle-screen, .message-screen {
+            display: none;
+            flex: 1;
+            height: 100%;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .puzzle-layout {
+            display: flex;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            margin: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .puzzle-sidebar {
+            width: 250px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-right: 1px solid rgba(228, 77, 144, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .puzzle-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .puzzle-board-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+        }
+
+        .puzzle-board {
+            width: min(400px, 100%);
+            height: min(400px, 100vh - 160px);
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 2px dashed #e44d90;
+            border-radius: 15px;
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            padding: 2px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .puzzle-piece-slot {
+            border: 1px dashed rgba(228, 77, 144, 0.5);
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        .puzzle-piece-slot.filled {
+            border: none;
+        }
+
+        .pieces-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            margin-top: 20px;
+            height: 150px;
+            overflow-y: auto;
+        }
+
+        .puzzle-piece {
+            width: calc(33.333% - 10px);
+            padding-bottom: calc(33.333% - 10px);
+            background-size: 300% 300%;
+            cursor: grab;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .puzzle-piece:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .puzzle-piece.dragging {
+            opacity: 0.6;
+            cursor: grabbing;
+        }
+
+        .puzzle-piece.placed {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            padding-bottom: 0;
+            top: 0;
+            left: 0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .puzzle-reference {
+            width: 100%;
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            border: 2px solid #e44d90;
+        }
+
+        .instructions {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: #555;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background-color: #e44d90;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #d33a7e;
+            transform: translateY(-2px);
+        }
+
+        .message-layout {
+            display: flex;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 1s ease;
+        }
+
+        .message-image {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            max-width: 50%;
+            padding: 30px;
+        }
+
+        .message-content {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .completed-image {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .love-message {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            max-width: 500px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .love-message h2 {
+            color: #e44d90;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .love-message p {
+            color: #333;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .progress {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1rem;
+            color: #e44d90;
+            margin-top: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .puzzle-layout, .message-layout {
+                flex-direction: column;
+            }
+            
+            .puzzle-sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid rgba(228, 77, 144, 0.3);
+                flex-direction: row;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            
+            .puzzle-reference {
+                max-width: 120px;
+                max-height: 120px;
+                margin-right: 20px;
+                margin-bottom: 0;
+            }
+            
+            .instructions {
+                margin-bottom: 0;
+                flex: 1;
+                min-width: 200px;
+            }
+            
+            .controls {
+                flex-direction: row;
+            }
+            
+            .message-image, .message-content {
+                max-width: 100%;
+            }
+            
+            .puzzle-board {
+                height: min(300px, 50vh);
+            }
+            
+            .pieces-container {
+                height: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .image-selection {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .puzzle-sidebar {
+                flex-direction: column;
+                padding: 15px;
+            }
+            
+            .controls {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .puzzle-reference {
+                margin: 0 auto 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hearts" id="hearts"></div>
+    
+    <header>
+        <h1>Mi vidaaaa </h1>
+        <p>Elige una de nuestras Fotos misteriosas</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Pantalla de selección de imágenes -->
+        <div class="image-selection" id="imageSelection">
+            <div class="image-option" data-index="0">
+                <img src="imagen1.jpg" alt="Imagen 1">
+            </div>
+            <div class="image-option" data-index="1">
+                <img src="imagen2.jpg" alt="Imagen 2">
+            </div>
+            <div class="image-option" data-index="2">
+                <img src="imagen3.jpg" alt="Imagen 3">
+            </div>
+            <div class="image-option" data-index="3">
+                <img src="imagen4.jpg" alt="Imagen 4">
+            </div>
+        </div>
+
+        <!-- Pantalla del rompecabezas -->
+        <div class="puzzle-screen" id="puzzleScreen">
+            <div class="puzzle-layout">
+                <div class="puzzle-sidebar">
+                    <div>
+                        <img id="puzzleReference" class="puzzle-reference" src="/api/placeholder/150/150" alt="Referencia">
+                        <div class="instructions">
+                            <p>Arrastra las piezas desde abajo hacia el tablero para completar la imagen</p>
+                        </div>
+                        <div class="progress" id="progress">Piezas: 0/9</div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button id="hintButton">Pista</button>
+                        <button id="resetButton">Reiniciar</button>
+                        <button id="backButton">Volver</button>
+                    </div>
+                </div>
+                
+                <div class="puzzle-main">
+                    <div class="puzzle-board-container">
+                        <div class="puzzle-board" id="puzzleBoard"></div>
+                    </div>
+                    
+                    <div class="pieces-container" id="piecesContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de mensaje de amor -->
+        <div class="message-screen" id="messageScreen">
+            <div class="message-layout">
+                <div class="message-image">
+                    <img id="completedImage" class="completed-image" src="imagen1.jpg" alt="Imagen completa">
+                </div>
+                
+                <div class="message-content">
+                    <div class="love-message">
+                        <h2>¡Lo lograste! ❤️</h2>
+                        <p id="loveMessage">Te amo con todo mi corazón. Cada pieza que armaste representa un momento especial que hemos compartido. Eres la persona más importante en mi vida y cada día a tu lado es un regalo. ¡Te amo infinitamente!</p>
+                    </div>
+                    <button id="returnButton">Volver al inicio</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos del juego
+        const images = [
+            "imagen1.jpg",
+            "imagen2.jpg",
+            "imagen3.jpg",
+            "imagen4.jpg"
+        ];
+
+        const loveMessages = [
+            "Cada pieza de este rompecabezas representa un motivo por el que te amo. Tu sonrisa, tu mirada, tu forma de ser... Todo en ti me enamora cada día más. ¡Te amo con locura!",
+            "Desde que llegaste a mi vida, todo tiene más color. Eres mi persona favorita y quiero compartir contigo todos los momentos que nos quedan por vivir. Te amo infinitamente.",
+            "No hay palabras suficientes para expresar lo mucho que significas para mí. Eres mi compañera, mi confidente, mi mejor amiga y el amor de mi vida. Te amaré por siempre.",
+            "Como este rompecabezas, somos piezas que encajan perfectamente. Contigo me siento completo y quiero seguir construyendo nuestra historia juntos. Te amo más de lo que imaginas."
+        ];
+
+        // Referencias a elementos del DOM
+        const imageSelection = document.getElementById('imageSelection');
+        const puzzleScreen = document.getElementById('puzzleScreen');
+        const puzzleBoard = document.getElementById('puzzleBoard');
+        const piecesContainer = document.getElementById('piecesContainer');
+        const messageScreen = document.getElementById('messageScreen');
+        const completedImage = document.getElementById('completedImage');
+        const loveMessage = document.getElementById('loveMessage');
+        const puzzleReference = document.getElementById('puzzleReference');
+        const hintButton = document.getElementById('hintButton');
+        const resetButton = document.getElementById('resetButton');
+        const backButton = document.getElementById('backButton');
+        const returnButton = document.getElementById('returnButton');
+        const heartsContainer = document.getElementById('hearts');
+        const progressElement = document.getElementById('progress');
+
+        // Variables globales
+        let currentImage = '';
+        let currentIndex = 0;
+        let placedPieces = 0;
+        const GRID_SIZE = 3;
+        const TOTAL_PIECES = GRID_SIZE * GRID_SIZE;
+        let showingHint = false;
+        let hintTimeout;
+
+        // Inicializar la aplicación
+        initApp();
+
+        function initApp() {
+            // Agregar event listeners
+            document.querySelectorAll('.image-option').forEach(option => {
+                option.addEventListener('click', selectImage);
+            });
+
+            hintButton.addEventListener('click', showHint);
+            resetButton.addEventListener('click', resetPuzzle);
+            backButton.addEventListener('click', returnToSelection);
+            returnButton.addEventListener('click', returnToSelection);
+
+            
+        }
+
+        function createFloatingHearts() {
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    createHeartElement();
+                }, i * 800);
+            }
+        }
+
+        function createHeartElement() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart');
+            
+            const left = Math.random() * 100;
+            const size = 10 + Math.random() * 20;
+            const duration = 10 + Math.random() * 15;
+            
+            heart.style.left = `${left}%`;
+            heart.style.bottom = '-20px';
+            heart.style.width = `${size}px`;
+            heart.style.height = `${size}px`;
+            heart.style.animationDuration = `${duration}s`;
+            heart.style.animationDelay = `${Math.random() * 10}s`;
+            
+            heartsContainer.appendChild(heart);
+            
+            setTimeout(() => {
+                heart.remove();
+                createHeartElement(); // Crear uno nuevo para mantener el número
+            }, duration * 1000);
+        }
+
+        // Función cuando se selecciona una imagen
+        function selectImage() {
+            currentIndex = parseInt(this.getAttribute('data-index'));
+            currentImage = images[currentIndex];
+            
+            // Cambiar a la pantalla del rompecabezas
+            imageSelection.style.display = 'none';
+            puzzleScreen.style.display = 'block';
+            
+            // Establecer imagen de referencia
+            puzzleReference.src = currentImage;
+            
+            // Crear el rompecabezas
+            createPuzzle();
+        }
+
+        // Crear el rompecabezas de arrastrar y soltar
+        function createPuzzle() {
+            // Limpiar los contenedores
+            puzzleBoard.innerHTML = '';
+            piecesContainer.innerHTML = '';
+            
+            // Reiniciar contador de piezas colocadas
+            placedPieces = 0;
+            
+            // Crear espacios para las piezas en el tablero
+            for (let i = 0; i < TOTAL_PIECES; i++) {
+                const slot = document.createElement('div');
+                slot.classList.add('puzzle-piece-slot');
+                slot.setAttribute('data-position', i);
+                
+                // Eventos para drag and drop
+                slot.addEventListener('dragover', allowDrop);
+                slot.addEventListener('drop', drop);
+                
+                puzzleBoard.appendChild(slot);
+            }
+            
+            // Crear las piezas del rompecabezas y mezclarlas
+            const pieceIndices = Array.from({ length: TOTAL_PIECES }, (_, i) => i);
+            shuffleArray(pieceIndices);
+            
+            for (let i = 0; i < TOTAL_PIECES; i++) {
+                const piece = document.createElement('div');
+                piece.classList.add('puzzle-piece');
+                piece.setAttribute('draggable', 'true');
+                piece.setAttribute('data-index', pieceIndices[i]);
+                
+                // Calcular la posición del background
+                const correctPos = pieceIndices[i];
+                const row = Math.floor(correctPos / GRID_SIZE);
+                const col = correctPos % GRID_SIZE;
+                
+                piece.style.backgroundImage = `url(${currentImage})`;
+                piece.style.backgroundPosition = `${col * 50}% ${row * 50}%`;
+                
+                // Añadir eventos de arrastrar
+                piece.addEventListener('dragstart', dragStart);
+                piece.addEventListener('dragend', dragEnd);
+                
+                // Permitir colocar piezas mediante clic en móviles
+                piece.addEventListener('click', handlePieceClick);
+                
+                piecesContainer.appendChild(piece);
+            }
+            
+            // Actualizar el progreso
+            updateProgress();
+        }
+
+        // Variable para almacenar la pieza seleccionada en dispositivos táctiles
+        let selectedPiece = null;
+
+        // Manejar clic en piezas (para dispositivos táctiles)
+        function handlePieceClick() {
+            if (this.classList.contains('placed')) return;
+            
+            // Si hay una pieza seleccionada previamente, quitar la selección
+            document.querySelectorAll('.piece-highlight').forEach(p => {
+                p.classList.remove('piece-highlight');
+            });
+            
+            if (selectedPiece === this) {
+                // Deseleccionar si se hace clic en la misma pieza
+                selectedPiece = null;
+            } else {
+                // Seleccionar esta pieza
+                this.classList.add('piece-highlight');
+                selectedPiece = this;
+            }
+        }
+
+        // Eventos de slots (para dispositivos táctiles)
+        document.addEventListener('click', function(e) {
+            if (!selectedPiece) return;
+            
+            const slot = e.target.closest('.puzzle-piece-slot');
+            if (slot && !slot.classList.contains('filled')) {
+                const pieceIndex = selectedPiece.getAttribute('data-index');
+                const slotPosition = slot.getAttribute('data-position');
+                
+                // Colocar la pieza en el slot
+                placePiece(selectedPiece, slot, pieceIndex === slotPosition);
+                
+                // Deseleccionar la pieza
+                selectedPiece.classList.remove('piece-highlight');
+                selectedPiece = null;
+            }
+        });
+
+        // Función para mezclar un array (algoritmo Fisher-Yates)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Eventos para drag and drop
+        function dragStart(e) {
+            if (showingHint) return;
+            
+            this.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', this.getAttribute('data-index'));
+        }
+
+        function dragEnd() {
+            this.classList.remove('dragging');
+        }
+
+        function allowDrop(e) {
+            if (!this.classList.contains('filled')) {
+                e.preventDefault();
+            }
+        }
+
+        function drop(e) {
+            e.preventDefault();
+            const pieceIndex = e.dataTransfer.getData('text/plain');
+            const pieceElement = document.querySelector(`.puzzle-piece[data-index="${pieceIndex}"]:not(.placed)`);
+            
+            if (pieceElement && !this.classList.contains('filled')) {
+                const slotPosition = this.getAttribute('data-position');
+                placePiece(pieceElement, this, pieceIndex === slotPosition);
+            }
+        }
+
+        // Colocar una pieza en el tablero
+        function placePiece(pieceElement, slot, isCorrect) {
+            // Clonar la pieza para colocarla en el slot
+            const clone = pieceElement.cloneNode(true);
+            clone.classList.add('placed');
+            clone.classList.remove('dragging', 'piece-highlight');
+            clone.setAttribute('draggable', 'false');
+            
+            // Marcar el slot como lleno
+            slot.classList.add('filled');
+            slot.appendChild(clone);
+            
+            // Eliminar la pieza original
+            pieceElement.remove();
+            
+            // Incrementar contador de piezas colocadas
+            placedPieces++;
+            
+            // Actualizar progreso
+            updateProgress();
+            
+            // Verificar si se completó el rompecabezas
+            if (placedPieces === TOTAL_PIECES) {
+                const allCorrect = Array.from(puzzleBoard.children).every(slot => {
+                    const piece = slot.querySelector('.puzzle-piece');
+                    if (!piece) return false;
+                    return piece.getAttribute('data-index') === slot.getAttribute('data-position');
+                });
+                
+                setTimeout(() => {
+                    showCompletionMessage();
+                }, 500);
+            }
+        }
+
+        // Actualizar el progreso
+        function updateProgress() {
+            progressElement.textContent = `Piezas: ${placedPieces}/${TOTAL_PIECES}`;
+        }
+
+        // Mostrar mensaje de finalización
+        function showCompletionMessage() {
+            puzzleScreen.style.display = 'none';
+            messageScreen.style.display = 'block';
+            
+            // Establecer la imagen y el mensaje
+            completedImage.src = currentImage;
+            loveMessage.textContent = loveMessages[currentIndex];
+            
+            
+        }
+
+        
+
+        // Mostrar pista
+        function showHint() {
+            if (showingHint) return;
+            
+            showingHint = true;
+            hintButton.disabled = true;
+            
+            // Añadir efecto de destello a las piezas en el contenedor
+            document.querySelectorAll('.puzzle-piece:not(.placed)').forEach(piece => {
+                const pieceIndex = piece.getAttribute('data-index');
+                const targetSlot = document.querySelector(`.puzzle-piece-slot[data-position="${pieceIndex}"]`);
+                
+                if (targetSlot && !targetSlot.classList.contains('filled')) {
+                    piece.classList.add('piece-highlight');
+                    targetSlot.classList.add('piece-highlight');
+                }
+            });
+            
+            // Restaurar después de 3 segundos
+            hintTimeout = setTimeout(() => {
+                document.querySelectorAll('.piece-highlight').forEach(element => {
+                    element.classList.remove('piece-highlight');
+                });
+                
+                showingHint = false;
+                hintButton.disabled = false;
+            }, 3000);
+        }
+
+        // Reiniciar el rompecabezas
+        function resetPuzzle() {
+            if (showingHint) {
+                clearTimeout(hintTimeout);
+                showingHint = false;
+                hintButton.disabled = false;
+            }
+            
+            selectedPiece = null;
+            createPuzzle();
+        }
+
+        // Volver a la selección de imágenes
+        function returnToSelection() {
+            if (showingHint) {
+                clearTimeout(hintTimeout);
+                showingHint = false;
+                hintButton.disabled = false;
+            }
+            
+            selectedPiece = null;
+            messageScreen.style.display = 'none';
+            puzzleScreen.style.display = 'none';
+            imageSelection.style.display = 'grid';
+        }
+    </script>
+</body>
+</html>
