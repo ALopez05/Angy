@@ -142,7 +142,8 @@
 
         .puzzle-board {
             width: min(400px, 100%);
-            height: min(400px, 100vh - 160px);
+            height: 300px; /* Adjusted height for better visibility on mobile */
+            overflow-y: auto; /* Allow scrolling if content exceeds height */
             background-color: rgba(255, 255, 255, 0.3);
             border: 2px dashed #e44d90;
             border-radius: 15px;
@@ -168,16 +169,17 @@
         }
 
         .pieces-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            padding: 15px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 15px;
-            margin-top: 20px;
-            height: 150px;
-            overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 15px;
+    margin-top: 20px;
+    height: auto; /* Adjusted height for better visibility on mobile */
+    max-height: 150px; /* Set a max height to allow scrolling */
+    overflow-y: auto; /* Allow scrolling if content exceeds height */
         }
 
         .puzzle-piece {
